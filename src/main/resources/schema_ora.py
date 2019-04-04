@@ -610,6 +610,7 @@ def save_table_definition(table, sorted_in_comment):
 	f.close()
 	return 1
 
+
 def print_table_definition(table, sorted_in_comment):
 	"""print DDL in a file"""
 	s = create_create_table_ddl(table, sorted_in_comment)

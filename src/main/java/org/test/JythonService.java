@@ -29,11 +29,10 @@ public class JythonService {
         try {
             InputStream initInputStream = this.getClass().getClassLoader().getResourceAsStream("schema_ora.py");
             PythonInterpreter interpreter = pythonInterpreter.getObject();
-//        interpreter.exec("import sys\nsys.argv = ['schema_ora.py', 'jdbc:oracle:thin:@192.168.233.131:1521:XE', 'DMS', 'DMS', '--show_sql']");
             interpreter.exec(prepareArgument());
             interpreter.setOut(outputStream);
             interpreter.execfile(initInputStream);
-        } catch (BeansException e) {
+        } catch (Exception e) {
             e.printStackTrace(new PrintWriter(outputStream));
         }
     }

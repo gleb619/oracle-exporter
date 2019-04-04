@@ -15,10 +15,12 @@ import java.util.Map;
 public class Controller {
 
     private final JythonService jythonService;
+    private final GenerateInsertStatementsHelper generateInsertStatementsHelper;
 
     @GetMapping("/dump/download")
     public void dump(OutputStream outputStream) {
         jythonService.export(outputStream);
+        generateInsertStatementsHelper.generate(outputStream);
     }
 
     @GetMapping("/dump/save")

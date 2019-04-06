@@ -74,4 +74,7 @@ Or specify full url with custom role and username
 *Note:* _To turn on basic security pass `true` to SECURITY_ENABLED env_
 
 ### Docker
-docker run -e "SPRING_PROFILES_ACTIVE=prod" -p 8080:8080 -t springio/gs-spring-boot-docker
+```
+docker build -t oracle-exporter .
+docker run -e "DB_URL=jdbc:oracle:thin:@192.168.1.1:1521:XE" -e "DB_USERNAME=scott" -e "DB_PASSWORD=tiger" -p 8080:8080 --name oracle-exporter -t oracle-exporter
+```

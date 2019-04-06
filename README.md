@@ -6,10 +6,10 @@ A simple tool for dump data and get ddl from oracle db.
 To start, go to official oracle site and download ojdbc8.jar 
 https://www.oracle.com/technetwork/database/features/jdbc/jdbc-ucp-122-3110062.html
 ```
-1. git clone git@github.com:amemifra/Spring-Jython.git 
-3. mvn install:install-file -Dfile=./ojdbc8.jar -DgroupId=com.oracle -DartifactId=ojdbc8 -Dversion=12.2.0.1 -Dpackaging=jar
-4. mvn clean package
-5. java -jar target/oracle-exporter-1.0.0-SNAPSHOT.jar --debug
+git clone git@github.com:amemifra/Spring-Jython.git 
+./mvnw install:install-file -Dfile=./ojdbc8.jar -DgroupId=com.oracle -DartifactId=ojdbc8 -Dversion=12.2.0.1 -Dpackaging=jar
+./mvnw clean package
+java -jar target/oracle-exporter-1.0.0-SNAPSHOT.jar --debug
 ```
 
 ### How to work
@@ -17,7 +17,7 @@ To dump with default settings
 ```
 GET http://localhost:8080/api/dump/download/{filename}
 ```
-*Note:* _Instead of {filename} - you must set awaited file name on exit. For example:_
+*Note:* _Instead of {filename} - you must set awaited file name on exit. For example:_  
 `GET http://localhost:8080/api/dump/download/my_awesome_dump_from_oracle.sql`
 
 To dump with specific settings
@@ -67,3 +67,11 @@ Or specify full url with custom role and username
 | DB_USERNAME  | system  |
 | DB_PASSWORD  | oracle  |
 | LOG_LEVEL  | INFO  |
+| SECURITY_ENABLED  | false  |
+| APP_USER  | admin  |
+| APP_PASSWORD  | admin123  |
+
+*Note:* _To turn on basic security pass `true` to SECURITY_ENABLED env_
+
+### Docker
+docker run -e "SPRING_PROFILES_ACTIVE=prod" -p 8080:8080 -t springio/gs-spring-boot-docker

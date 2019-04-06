@@ -33,12 +33,14 @@ public class JythonService {
 
     private void export(OutputStream outputStream, AppProperties properties, String script) {
         try {
+            log.info("Generating ddl");
             InputStream initInputStream = this.getClass().getClassLoader().getResourceAsStream(script);
-            PythonInterpreter interpreter = pythonInterpreter.getObject();
-            interpreter.exec(prepareArgument(properties));
-            interpreter.setOut(outputStream);
-            interpreter.execfile(initInputStream);
-            log.info("ddl was generated for {}, {}", properties.url, properties.username);
+            try (PythonInterpreter interpreter = pythonInterpreter.getObject()) {
+                interpreter.exec(prepareArgument(properties));
+                interpreter.setOut(outputStream);
+                interpreter.execfile(initInputStream);
+                log.debug("Generation of ddl was successful");
+            }
         } catch (Exception e) {
             log.error("ERROR: ", e);
             e.printStackTrace(new PrintWriter(outputStream));
@@ -46,7 +48,7 @@ public class JythonService {
     }
 
     private String prepareArgument(AppProperties appProperties) {
-        log.info("Prepare to generate ddl for {}, {}", appProperties.url, appProperties.username);
+        log.debug("Prepare to generate ddl for {}, {}", appProperties.url, appProperties.username);
         return String.format("import sys\nsys.argv = ['schema_ora.py', '%s', '%s', '%s', '--show_sql']",
                 appProperties.url,
                 appProperties.username,

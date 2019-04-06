@@ -132,7 +132,7 @@ public class InsertsHelper {
 
     @SneakyThrows
     private void generate(OutputStream outputStream, AppProperties appProperties) {
-        log.info("Prepare to export data for {}, {}", appProperties.url, appProperties.username);
+        log.debug("Prepare to export data for {}, {}", appProperties.url, appProperties.username);
         try {
             try (Connection conn = getConnection(appProperties.url, appProperties.username, appProperties.password)) {
                 log.info("Prepare to dump data");
@@ -143,7 +143,7 @@ public class InsertsHelper {
                         generateInsertStatements(conn, tableName, printWriter);
                     }
                 }
-                log.info("Done");
+                log.info("Data was successfully exported");
             }
         } catch (Exception e) {
             log.error("ERROR: ", e);

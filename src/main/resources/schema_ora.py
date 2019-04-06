@@ -290,7 +290,7 @@ CREATED_DIRS = []
 def ensure_directory(dname):
 	"""creates directory if it not exists"""
 	if not os.path.exists(dname):
-		os.makedirs(dname)
+		# os.makedirs(dname)
 		CREATED_DIRS.append(dname)
 
 

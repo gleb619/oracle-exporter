@@ -1,10 +1,22 @@
 server:
   port: ${SERVER_PORT:8080}
+  jetty:
+    acceptors: 4
+    selectors: 4
 
 spring:
+  jmx:
+    enabled: false
+  main:
+    lazy-initialization: true
   http:
     encoding:
       force-response: true
+  security:
+    enabled: ${SECURITY_ENABLED:false}
+    user:
+      name: ${APP_USER:admin}
+      password: ${APP_PASSWORD:admin123}
 
 app:
   url: ${DB_URL:jdbc:oracle:thin:@localhost:1521:XE}

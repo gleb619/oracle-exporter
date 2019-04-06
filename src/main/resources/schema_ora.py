@@ -2,7 +2,7 @@
 # -*- coding: utf8 -*-
 __version__ = '$Id: schema_ora.py 1754 2014-02-14 08:57:52Z mn $'
 
-# export Oracle schema to text
+# exportStandard Oracle schema to text
 # usable to compare databases that should be the same
 #
 # Oracle schema info:
@@ -41,12 +41,12 @@ example:
 """ % OPTIONS
 
 import codecs
-import sys
 import os
-import zipfile
 import os.path
-import time
 import re
+import sys
+import time
+import zipfile
 
 USE_JYTHON = 1
 
@@ -318,7 +318,7 @@ def init_db_conn(connect_string, username, passwd):
 		try:
 			if USE_JYTHON:
 				dbinfo = 'JDBC: %s, user: %s' % (connect_string, username)
-				print('--%s' % (dbinfo))
+				# print('--%s' % (dbinfo))
 				_CONN = zxJDBC.connect(connect_string, username, passwd, 'oracle.jdbc.driver.OracleDriver')
 			else:
 				dbinfo = 'db: %s@%s' % (username, connect_string)
@@ -601,6 +601,44 @@ def create_create_table_ddl(table, sorted_in_comment):
 	return '%s\n\n%s\n\n%s' % (ct, indices_str, triggers_str)
 
 
+def print_table_indexes(table):
+	"""creates DDL with INDEXES for table"""
+	rs = select_qry(TTABLE_COLUMNS_SQL % (table))
+	lines_ct = []
+	lines_sc = []
+	for row in rs:
+		lines_ct.append(table_info_row(row).strip())
+
+	pk_columns = add_primary_key_ddl(table, 0, lines_ct, lines_sc)
+	add_foreign_key_ddl(table, 0, lines_ct, lines_sc)
+
+	indices_str = get_table_indices(table, pk_columns)
+	triggers_str = get_table_triggers(table)
+
+	if indices_str and indices_str != '':
+		print indices_str
+	if triggers_str and triggers_str != '':
+		print triggers_str
+
+
+def print_table_definition(table):
+	"""creates DDL with CREATE TABLE for table"""
+	# gets information about columns
+	rs = select_qry(TTABLE_COLUMNS_SQL % (table))
+	lines_ct = []
+	lines_sc = []
+	for row in rs:
+		lines_ct.append(table_info_row(row).strip())
+
+	pk_columns = add_primary_key_ddl(table, 0, lines_ct, lines_sc)
+
+	# creates DDL CREATE TABLE instruction
+	# - \n, is required when column has comment
+	ct = 'CREATE TABLE %s (\n\t %s\n);' % (table.lower(), '\n\t,'.join(lines_ct))
+
+	print '%s' % (ct)
+
+
 def save_table_definition(table, sorted_in_comment):
 	"""saves DDL in a file"""
 	s = create_create_table_ddl(table, sorted_in_comment)
@@ -609,13 +647,6 @@ def save_table_definition(table, sorted_in_comment):
 	output_line(s, f)
 	f.close()
 	return 1
-
-
-def print_table_definition(table, sorted_in_comment):
-	"""print DDL in a file"""
-	s = create_create_table_ddl(table, sorted_in_comment)
-	print s
-
 
 def show_tables():
 	"""shows info tables"""
@@ -646,6 +677,39 @@ def show_defaults():
 	"""shows default values for columns"""
 	show_qry('defaults', DEFAULTS_INFO_SQL)
 
+
+def print_sequences():
+	cur = db_conn().cursor()
+	cur.execute(TSEQUENCES_INFO_SQL)
+	rows = cur.fetchall()
+	for row in rows:
+		sequence_name = row[0]
+		min_value = '%.0f' % row[1]
+		max_value = '%.0f' % row[2]
+		increment_by = '%.0f' % row[3]
+		last_number = '%.0f' % row[4]
+		cache_size = '%.0f' % row[5]
+		cycle_flag = row[6]
+		order_flag = row[7]
+
+		if cache_size and cache_size != '0':
+			cache_size = 'CACHE ' + cache_size
+		else:
+			cache_size = 'NOCACHE'
+
+		if order_flag == 'Y':
+			order_flag = 'ORDER'
+		else:
+			order_flag = 'NOORDER'
+
+		if cycle_flag == 'Y':
+			cycle_flag = 'CYCLE'
+		else:
+			cycle_flag = 'NOCYCLE'
+
+		print ("CREATE SEQUENCE %s MINVALUE %s MAXVALUE %s INCREMENT BY %s START WITH %s %s %s %s;" % (
+		sequence_name, min_value, max_value, increment_by, last_number, cache_size, order_flag, cycle_flag))
+	cur.close()
 
 def show_sequences(separate_files):
 	"""shows database sequences"""
@@ -874,6 +938,7 @@ def clean_up():
 def dump_db_info(separate_files, out_f, stdout):
 	"""saves information about database schema in file/files"""
 	test = '--test' in sys.argv
+	generate_stuff = 0
 	if test or separate_files or SHOW_SQL:
 		for dn in (TABLES_INFO_DIR, VIEWS_INFO_DIR, SEQUENCES_INFO_DIR, FUNCTIONS_INFO_DIR, PROCEDURES_INFO_DIR, PACKAGES_INFO_DIR):
 			ensure_directory(dn)
@@ -884,15 +949,23 @@ def dump_db_info(separate_files, out_f, stdout):
 			if rs:
 				for row in rs:
 					table = row[0]
-					if SHOW_SQL: 
-						print_table_definition(table, sorted_in_comment)
+					if SHOW_SQL:
+						print_table_definition(table)
 					else:
-						save_table_definition(table, sorted_in_comment)
+						save_table_definition(table, sorted_in_comment, generate_stuff)
 	else:
 		show_tables()
-	if not TABLES_ONLY and not test:
+	if not TABLES_ONLY and not test and not SHOW_SQL:
 		show_additional_info(separate_files)
-	output_line('\n\n--- the end ---')
+
+	if SHOW_SQL:
+		print_sequences()
+		rs = select_qry(TABLE_NAMES_SQL)
+		if rs:
+			for row in rs:
+				table = row[0]
+				print_table_indexes(table)
+	# output_line('\n\n--- the end ---')
 	if out_f:
 		out_f.close()
 		sys.stdout = stdout
@@ -909,7 +982,6 @@ def get_option_value(prefix):
 			if result.startswith('='):
 				result = result[1:]
 	return result
-
 
 def main():
 	"""main function"""
